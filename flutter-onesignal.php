@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: Flutter OneSignal Notifications
- * Plugin URI: https://seusite.com
+ * Plugin URI: https://creativewave.com.br
  * Description: Envia notificações push para aplicativos Flutter via OneSignal.
  * Version: 1.1
  * Author: Rafael Benetti

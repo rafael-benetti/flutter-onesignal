@@ -34,25 +34,41 @@ function flutter_onesignal_send_post_notification($post_id, $post)
         return;
     }
 
-    // Define o título e mensagem padrão
-    $title = $post->post_title;
-    $message = '📲 Notícia completa no App!';
-    $segment = 'All';
-
-    // Envia a notificação
-    $success = flutter_onesignal_push($title, $message, $segment);
-
-    if ($success) {
-        // Marca o post como "notificação enviada"
-        update_post_meta($post_id, '_onesignal_notification_sent', true);
-    }
+    // Agenda o envio para 3 minutos no futuro
+    wp_schedule_single_event(time() + 3600, 'flutter_onesignal_delayed_notification', [$post_id]);
 
     // Adiciona o hook novamente
     add_action('publish_post', 'flutter_onesignal_send_post_notification', 10, 2);
 }
 
+// Hook para a tarefa agendada
+add_action('flutter_onesignal_delayed_notification', 'flutter_onesignal_delayed_notification_handler');
+function flutter_onesignal_delayed_notification_handler($post_id)
+{
+    $post = get_post($post_id);
+    if (!$post) {
+        return;
+    }
+
+    $title = $post->post_title;
+    $message = '📲 Notícia completa no App!';
+    $segment = 'All';
+
+    // Define o link para abrir no app
+    $url = 'https://seuapp.com.br/noticia/' . $post_id;
+
+    // Envia a notificação
+    $success = flutter_onesignal_push($title, $message, $segment, $url);
+
+    if ($success) {
+        // Marca o post como "notificação enviada"
+        update_post_meta($post_id, '_onesignal_notification_sent', true);
+    }
+}
+
+
 // Função principal para enviar notificações via OneSignal
-function flutter_onesignal_push($title, $message, $segment)
+function flutter_onesignal_push($title, $message, $segment, $url = null)
 {
     $url = 'https://onesignal.com/api/v1/notifications';
 
@@ -66,6 +82,7 @@ function flutter_onesignal_push($title, $message, $segment)
         'included_segments' => [$segment],
         'headings' => ['en' => $title],
         'contents' => ['en' => $message],
+        'url' => $url, // Adiciona o link
     ];
 
     // Envia a notificação
@@ -90,3 +107,4 @@ function flutter_onesignal_push($title, $message, $segment)
 
     return true;
 }
+
